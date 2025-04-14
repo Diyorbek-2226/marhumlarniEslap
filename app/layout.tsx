@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import Header from '@/components/header';
 import { Toaster } from '@/components/ui/sonner';
 import QueryProvider from '@/components/query-provider';
+import { EmailProvider } from '@/lib/contex/EmailContex';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -26,12 +27,14 @@ export default function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
-        >
-          <QueryProvider>
+        ><EmailProvider>
+           <QueryProvider>
             <Header />
             {children}
             <Toaster />
           </QueryProvider>
+        </EmailProvider>
+         
         </ThemeProvider>
       </body>
     </html>

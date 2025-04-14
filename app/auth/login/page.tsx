@@ -40,8 +40,10 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       const { data } = await api.post("/auth/sign-in", values)
-      localStorage.setItem("token", data.token)
-      router.push("/")
+    
+      
+      localStorage.setItem("token", data?.data?.token )
+      router.push("/search")
       toast.success("Muvaffaqiyatli kirdingiz")
     } catch (error) {
       toast.error("Email yoki parol noto'g'ri")
