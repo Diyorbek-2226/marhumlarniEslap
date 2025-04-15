@@ -4,20 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Button } from "@/components/ui/button"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import api from "@/lib/axios"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { signIn } from "next-auth/react"
 
 const formSchema = z.object({
@@ -26,8 +19,8 @@ const formSchema = z.object({
 })
 
 export default function LoginPage() {
-  const [email,SetEmail]=useState('')
-  const [password,SetPaasword]=useState('')
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const router = useRouter()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -39,24 +32,59 @@ export default function LoginPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const { data } = await api.post("/auth/sign-in", values)
-    
-      
-      localStorage.setItem("token", data?.data?.token )
-      router.push("/search")
-      toast.success("Muvaffaqiyatli kirdingiz")
+      const response = await api.post("/auth/sign-in", values)
+
+      // Log the response to see its structure
+      console.log("API Response:", response)
+
+      // Check different possible token locations in the response
+      const token = response?.data?.data?.token || response?.data?.token || response?.data
+
+      if (!token) {
+        console.error("Token not found in response:", response)
+        toast.error("Token topilmadi")
+        return
+      }
+
+      // Save token to localStorage
+      try {
+        localStorage.setItem("token", typeof token === "string" ? token : JSON.stringify(token))
+       
+
+        // Verify token was saved
+       const savedToken = localStorage.getItem("token")
+        
+
+        router.push("/search")
+        toast.success("Muvaffaqiyatli kirdingiz")
+      } catch (storageError) {
+        console.error("Error saving to localStorage:", storageError)
+        toast.error("Token saqlashda xatolik")
+      }
     } catch (error) {
+      console.error("Login error:", error)
       toast.error("Email yoki parol noto'g'ri")
     }
   }
 
   const handleGoogleSignIn = async () => {
     try {
-      await signIn('google', { callbackUrl: '/' })
+      await signIn("google", { callbackUrl: "/" })
     } catch (error) {
       toast.error("Google bilan kirish xatoligi")
     }
   }
+
+  // Check if localStorage is available (to avoid SSR issues)
+  useEffect(() => {
+    try {
+      const testKey = "__test__"
+      localStorage.setItem(testKey, testKey)
+      localStorage.removeItem(testKey)
+    } catch (e) {
+      console.error("localStorage is not available:", e)
+    }
+  }, [])
 
   return (
     <div className="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
@@ -69,28 +97,17 @@ export default function LoginPage() {
         </div>
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-2">
-            <p className="text-lg">
-              Marhumlarni eslash va duolar qilish uchun platforma
-            </p>
+            <p className="text-lg">Marhumlarni eslash va duolar qilish uchun platforma</p>
           </blockquote>
         </div>
       </div>
       <div className="lg:p-8">
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
           <div className="flex flex-col space-y-2 text-center">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Hisobingizga kiring
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Email va parolingizni kiriting
-            </p>
+            <h1 className="text-2xl font-semibold tracking-tight">Hisobingizga kiring</h1>
+            <p className="text-sm text-muted-foreground">Email va parolingizni kiriting</p>
           </div>
-          <Button 
-            variant="outline" 
-            type="button" 
-            onClick={handleGoogleSignIn}
-            className="w-full"
-          >
+          <Button variant="outline" type="button" onClick={handleGoogleSignIn} className="w-full">
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -116,9 +133,7 @@ export default function LoginPage() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Yoki email bilan
-              </span>
+              <span className="bg-background px-2 text-muted-foreground">Yoki email bilan</span>
             </div>
           </div>
           <Form {...form}>
@@ -130,14 +145,14 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                    <Input
-                      onChange={(e) => {
-                        SetEmail(e.target.value)
-                        field.onChange(e)
-                      }}
-                      value={field.value}
-                      placeholder="example@mail.com"
-                    />
+                      <Input
+                        onChange={(e) => {
+                          setEmail(e.target.value)
+                          field.onChange(e)
+                        }}
+                        value={field.value}
+                        placeholder="example@mail.com"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -150,15 +165,15 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Parol</FormLabel>
                     <FormControl>
-                    <Input
-                      onChange={(e) => {
-                        SetPaasword(e.target.value)
-                        field.onChange(e)
-                      }}
-                      value={field.value}
-                      placeholder="Password"
-                      type="password"
-                    />
+                      <Input
+                        onChange={(e) => {
+                          setPassword(e.target.value)
+                          field.onChange(e)
+                        }}
+                        value={field.value}
+                        placeholder="Password"
+                        type="password"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -171,10 +186,7 @@ export default function LoginPage() {
           </Form>
           <p className="px-8 text-center text-sm text-muted-foreground">
             Hisobingiz yo'qmi?{" "}
-            <Link
-              href="/auth/register"
-              className="underline underline-offset-4 hover:text-primary"
-            >
+            <Link href="/auth/register" className="underline underline-offset-4 hover:text-primary">
               Ro'yxatdan o'ting
             </Link>
           </p>

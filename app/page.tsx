@@ -1,14 +1,11 @@
+import { SearchFilters } from "@/components/SearchFilter"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
+
 export default function Home() {
   return (
-    <div
-      style={{
-        maxWidth: 1200,
-        margin: '0 auto',
-        padding: '2rem',
-        textAlign: 'center',
-      }}
-    >
-      Start prompting.
+    <div className="min-h-screen">
+      <SearchFilters/>
     </div>
-  );
+  )
 }

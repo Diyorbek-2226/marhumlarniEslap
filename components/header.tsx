@@ -3,22 +3,50 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ModeToggle } from "@/components/mode-toggle"
-import { Heart, Menu, Search, X } from "lucide-react"
+import { Menu, Search, Upload, User, X } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useAuth } from "@/hooks/useAuth"
+
 
 export default function Header() {
   const pathname = usePathname()
   const isAuth = pathname.startsWith("/auth")
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-
+  const { isAuthenticated, setToken } = useAuth()
+const navigate=useRouter()
   if (isAuth) return null
+
+  const savedToken = localStorage.getItem("token")
+  const menuItems = [
+    { href: "/", label: "Asosiy" },
+    { href: "/addpost", label: "Post qo'shish", authRequired: !savedToken },
+    { href: "/mypost", label: "Postlarim", authRequired: !savedToken },
+    { href: "/posts", label: "Postlar",},
+    { href: "/", label: "Qidirish",},
+    { href: "/my-posts", label: "Mening postlarim", authRequired: true },
+    
+  ]
+
+  const handleLogout = () => {
+    window.location.reload()
+    localStorage.clear()
+navigate.push('/search')
+  }
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container sm:w-4/5 mx-auto flex h-16 items-center justify-between">
+      <div className="container w-4/5 mx-auto flex h-16 items-center justify-between">
         <div className="flex items-center gap-4">
           <Sheet>
             <SheetTrigger asChild>
@@ -26,45 +54,51 @@ export default function Header() {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-64">
+            <SheetContent side="left" className="w-72">
+              <SheetHeader className="border-b pb-4 mb-4">
+                <SheetTitle>Menu</SheetTitle>
+              </SheetHeader>
               <nav className="flex flex-col gap-2">
-                <Link href="/posts">
-                  <Button variant="ghost" className="w-full justify-start">
-                    Postlar
-                  </Button>
-                </Link>
-                <Link href="/duo">
-                  <Button variant="ghost" className="w-full justify-start">
-                    Duolar
-                  </Button>
-                </Link>
+                {menuItems.map((item) =>
+                  (!item.authRequired || (item.authRequired && isAuthenticated)) && (
+                    <Link key={item.href} href={item.href}>
+                      <Button variant="ghost" className="w-full justify-start">
+                        {item.label}
+                      </Button>
+                    </Link>
+                  )
+                )}
               </nav>
             </SheetContent>
           </Sheet>
 
           <Link href="/" className="flex items-center space-x-2">
-            {/* <Heart className="h-6 w-6" /> */}
-            <span className="font-bold hidden sm:inline" ><span className="text-green-600 font-bold">Y</span>odimdasiz</span>
+            <span className="font-bold text-xl">
+              <span className="text-green-600">Y</span>odimdasiz
+            </span>
           </Link>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex md:w-80">
+          {/* <div className="hidden md:flex md:w-80">
             <Input
               placeholder="Qidirish..."
               className="w-full"
               type="search"
               icon={<Search className="h-4 w-4" />}
             />
-          </div>
-          
-          <nav className="hidden lg:flex items-center space-x-2">
-            <Link href="/posts">
-              <Button variant="ghost">Postlar</Button>
-            </Link>
-            <Link href="/duo">
-              <Button variant="ghost">Duolar</Button>
-            </Link>
+          </div> */}
+
+          <nav className="hidden lg:flex items-center space-x-1">
+            {menuItems.map((item) =>
+              (!item.authRequired || (item.authRequired && isAuthenticated)) && (
+                <Link key={item.href} href={item.href}>
+                  <Button variant="ghost">
+                    {item.label}
+                  </Button>
+                </Link>
+              )
+            )}
           </nav>
 
           <div className="flex items-center gap-2">
@@ -74,23 +108,53 @@ export default function Header() {
               className="md:hidden"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
             >
-              {isSearchOpen ? (
+              {/* {isSearchOpen ? (
                 <X className="h-5 w-5" />
               ) : (
                 <Search className="h-5 w-5" />
-              )}
+              )} */}
             </Button>
             <ModeToggle />
-            <Link className="me-4" href="/auth/login">
-              <Button >Kirish</Button>
-            </Link>
+
+            {savedToken ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <User className="h-5 w-5" />
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="flex items-center">
+                      <User className="mr-2 h-4 w-4" />
+                      Profil
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/my-posts" className="flex items-center">
+                      <Upload className="mr-2 h-4 w-4" />
+                      Mening postlarim
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-500 cursor-pointer"> 
+                    Chiqish
+                    </DropdownMenuItem> 
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link href="/auth/login">
+                <Button className="bg-green-600 hover:bg-green-700">Kirish</Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
 
-      {isSearchOpen && (
+      {/* {isSearchOpen && (
         <div className="border-t md:hidden">
-          <div className="container px-2 py-4">
+          <div className="container px-4 py-4">
             <Input
               placeholder="Qidirish..."
               type="search"
@@ -98,7 +162,7 @@ export default function Header() {
             />
           </div>
         </div>
-      )}
+      )} */}
     </header>
   )
 }

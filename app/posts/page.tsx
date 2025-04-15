@@ -11,7 +11,9 @@ import { Separator } from "@/components/ui/separator"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import api from "@/lib/axios"
 import { cn } from "@/lib/utils"
-
+import like from '../../static/images/like.jpg'
+import bezlike from '../../static/images/bezlike.jpg'
+import Image from "next/image"
 interface Comment {
   id: number
   text: string
@@ -55,6 +57,7 @@ function PostCard({ post, isActive }: { post: Post; isActive: boolean }) {
   const [likeCount, setLikeCount] = useState(post.likeCount)
   const [isCommentsOpen, setIsCommentsOpen] = useState(false)
   const [newComment, setNewComment] = useState("")
+  const [likes, Setlikes]=useState(false)
   const [comments, setComments] = useState<Comment[]>([
     {
       id: 1,
@@ -91,8 +94,10 @@ function PostCard({ post, isActive }: { post: Post; isActive: boolean }) {
   const handleLike = () => {
     if (liked) {
       setLikeCount((prev) => prev - 1)
+      Setlikes(false)
     } else {
       setLikeCount((prev) => prev + 1)
+      Setlikes(true)
     }
     setLiked(!liked)
   }
@@ -164,7 +169,12 @@ function PostCard({ post, isActive }: { post: Post; isActive: boolean }) {
               className="h-12 w-12 rounded-full bg-black/20 backdrop-blur-sm hover:bg-black/40"
               onClick={handleLike}
             >
-              <Heart className={`h-7 w-7 ${liked ? "fill-red-500 text-red-500" : "text-white"}`} />
+              <Image 
+  src={likes? like:bezlike} 
+  alt="Like icon" 
+  className="w-[80%] rounded-[50%]"
+/>
+              {/* <Heart className={`h-7 w-7 ${liked ? "fill-red-500 text-red-500" : "text-white"}`} /> */}
             </Button>
             <span className="text-white text-xs mt-1">{likeCount}</span>
           </div>
@@ -269,7 +279,8 @@ function PostCard({ post, isActive }: { post: Post; isActive: boolean }) {
 }
 
 export default function PostsPage() {
-  const [activeIndex, setActiveIndex] = useState(0)
+  const [activeIndex, setActiveIndex] = useState()
+
   const containerRef = useRef<HTMLDivElement>(null)
   
   // For loading more content when reaching the end
@@ -289,15 +300,18 @@ export default function PostsPage() {
   } = useInfiniteQuery({
     queryKey: ['posts'],
     queryFn: async ({ pageParam = 0 }) => {
-      const res = await api.get(`/posts/all?page=${pageParam}&size=5`)
+
+      const res = await api.get(`/posts/all?page=${pageParam}&size=20`)
       return res.data?.data
     },
     getNextPageParam: (lastPage) => {
       if (lastPage?.last) return undefined
       return (lastPage?.number || 0) + 1
+       
     },
     initialPageParam: 0,
   })
+  
   
   // Flatten the pages data into a single array of posts
   const posts = data?.pages.flatMap(page => page?.content || []) || []
@@ -306,6 +320,7 @@ export default function PostsPage() {
   useEffect(() => {
     if (isLoadMoreVisible && hasNextPage && !isFetchingNextPage) {
       fetchNextPage()
+     
     }
   }, [isLoadMoreVisible, hasNextPage, isFetchingNextPage, fetchNextPage])
   
@@ -372,6 +387,7 @@ export default function PostsPage() {
   const goToNextPost = () => {
     if (activeIndex < posts.length - 1) {
       scrollToPost(activeIndex + 1)
+      
     }
   }
   
@@ -397,7 +413,7 @@ export default function PostsPage() {
   }
 
   return (
-    <div className="relative h-[100dvh] bg-black">
+    <div className="relative h-[100dvh] ">
       {/* Main scrollable container */}
       <div 
         ref={containerRef}
