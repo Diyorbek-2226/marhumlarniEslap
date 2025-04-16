@@ -1,12 +1,11 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { ModeToggle } from "@/components/mode-toggle"
-import { Menu, Search, Upload, User, X } from "lucide-react"
+import { LogOut, Menu, Upload, User } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import {
   DropdownMenu,
@@ -16,33 +15,71 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/hooks/useAuth"
+import { useQuery } from "@tanstack/react-query"
+import api from "@/lib/axios"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
+interface ProfileData {
+  email: string
+  fullName: string
+  id: string
+  photo: string | null
+}
 
 export default function Header() {
   const pathname = usePathname()
   const isAuth = pathname.startsWith("/auth")
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const { isAuthenticated, setToken } = useAuth()
-const navigate=useRouter()
+  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
+  const [savedToken, setSavedToken] = useState<string | null>(null)
+
+  useEffect(() => {
+    setMounted(true)
+    setSavedToken(localStorage.getItem("token"))
+  }, [])
+
   if (isAuth) return null
 
-  const savedToken = localStorage.getItem("token")
   const menuItems = [
     { href: "/", label: "Asosiy" },
     { href: "/addpost", label: "Post qo'shish", authRequired: !savedToken },
     { href: "/mypost", label: "Postlarim", authRequired: !savedToken },
-    { href: "/posts", label: "Postlar",},
-    { href: "/", label: "Qidirish",},
+    { href: "/posts", label: "Postlar" },
+    { href: "/", label: "Qidirish" },
     { href: "/my-posts", label: "Mening postlarim", authRequired: true },
-    
   ]
 
   const handleLogout = () => {
-    window.location.reload()
     localStorage.clear()
-navigate.push('/search')
+    router.push("/search")
+    window.location.reload()
   }
 
+  const {
+    isLoading,
+    isError,
+    data: profile,
+  } = useQuery<ProfileData>({
+    queryKey: ["profile"],
+    queryFn: async () => {
+      const res = await api.get(`/users/me`)
+      return res.data.data
+    },
+    enabled: !!savedToken,
+  })
+console.log(profile);
+
+  // Get initials from fullName for avatar fallback
+  const getInitials = (name: string) => {
+    if (!name) return "U"
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -59,14 +96,15 @@ navigate.push('/search')
                 <SheetTitle>Menu</SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col gap-2">
-                {menuItems.map((item) =>
-                  (!item.authRequired || (item.authRequired && isAuthenticated)) && (
-                    <Link key={item.href} href={item.href}>
-                      <Button variant="ghost" className="w-full justify-start">
-                        {item.label}
-                      </Button>
-                    </Link>
-                  )
+                {menuItems.map(
+                  (item) =>
+                    (!item.authRequired || (item.authRequired && isAuthenticated)) && (
+                      <Link key={item.href} href={item.href}>
+                        <Button variant="ghost" className="w-full justify-start">
+                          {item.label}
+                        </Button>
+                      </Link>
+                    ),
                 )}
               </nav>
             </SheetContent>
@@ -80,34 +118,19 @@ navigate.push('/search')
         </div>
 
         <div className="flex items-center gap-4">
-          {/* <div className="hidden md:flex md:w-80">
-            <Input
-              placeholder="Qidirish..."
-              className="w-full"
-              type="search"
-              icon={<Search className="h-4 w-4" />}
-            />
-          </div> */}
-
           <nav className="hidden lg:flex items-center space-x-1">
-            {menuItems.map((item) =>
-              (!item.authRequired || (item.authRequired && isAuthenticated)) && (
-                <Link key={item.href} href={item.href}>
-                  <Button variant="ghost">
-                    {item.label}
-                  </Button>
-                </Link>
-              )
+            {menuItems.map(
+              (item) =>
+                (!item.authRequired || (item.authRequired && isAuthenticated)) && (
+                  <Link key={item.href} href={item.href}>
+                    <Button variant="ghost">{item.label}</Button>
+                  </Link>
+                ),
             )}
           </nav>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
-            >
+            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsSearchOpen(!isSearchOpen)}>
               {/* {isSearchOpen ? (
                 <X className="h-5 w-5" />
               ) : (
@@ -119,12 +142,25 @@ navigate.push('/search')
             {savedToken ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative">
-                    <User className="h-5 w-5" />
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full" />
+                  <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-10 w-10">
+                      {profile?.photo ? (
+                        <AvatarImage src={profile.photo || "/placeholder.svg"} alt={profile?.fullName || "User"} />
+                      ) : (
+                        <AvatarFallback className="bg-green-100 text-green-800">
+                          {profile?.fullName ? getInitials(profile.fullName) : "U"}
+                        </AvatarFallback>
+                      )}
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full" />
+                    </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-64">
+                  <div className="flex flex-col space-y-1 p-2">
+                    <p className="font-medium">{profile?.fullName || "Loading..."}</p>
+                    <p className="text-xs text-muted-foreground truncate">{profile?.email || "Loading..."}</p>
+                  </div>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href="/profile" className="flex items-center">
                       <User className="mr-2 h-4 w-4" />
@@ -138,9 +174,10 @@ navigate.push('/search')
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-500 cursor-pointer"> 
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-500 cursor-pointer flex items-center">
+                    <LogOut className="mr-2 h-4 w-4" />
                     Chiqish
-                    </DropdownMenuItem> 
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
@@ -151,18 +188,6 @@ navigate.push('/search')
           </div>
         </div>
       </div>
-
-      {/* {isSearchOpen && (
-        <div className="border-t md:hidden">
-          <div className="container px-4 py-4">
-            <Input
-              placeholder="Qidirish..."
-              type="search"
-              icon={<Search className="h-4 w-4" />}
-            />
-          </div>
-        </div>
-      )} */}
     </header>
   )
 }

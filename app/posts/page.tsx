@@ -166,7 +166,7 @@ function PostCard({ post, isActive }: { post: Post; isActive: boolean }) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-12 w-12 rounded-full bg-black/20 backdrop-blur-sm hover:bg-black/40"
+              className="h-12 w-12 rounded-full  backdrop-blur-sm "
               onClick={handleLike}
             >
               <Image 
