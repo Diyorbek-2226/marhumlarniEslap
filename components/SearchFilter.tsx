@@ -1,6 +1,5 @@
-"use client"
+'use client'
 
-import type React from "react"
 import { useRef, useState } from "react"
 import { Search, XCircle } from "lucide-react"
 import { CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
@@ -15,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 
 interface Cemetery {
   name: string
@@ -24,210 +24,215 @@ interface SearchCriteria {
   viloyat: string
   tuman: string
   qabrNomi: string
-  qabrRaqami: string
+  qabrRaqami?: string
 }
 
-export function SearchFilters() {
-  const viloyatRef = useRef<HTMLSelectElement>(null)
-  const tumanRef = useRef<HTMLSelectElement>(null)
+interface Region {
+  name: string
+}
+
+interface District {
+  name: string
+}
+
+export default function SearchFilters() {
   const qabrRaqamiRef = useRef<HTMLInputElement>(null)
 
   const [selectedRegion, setSelectedRegion] = useState<string>("")
   const [selectedDistrict, setSelectedDistrict] = useState<string>("")
   const [selectedCemetery, setSelectedCemetery] = useState<string>("")
 
-  // Fetching regions
-  const {
-    isLoading: isLoadingRegions,
-    data: regions,
-  } = useQuery<string[]>({
+  // Fetch regions
+  const { data: regions = [], isLoading: isLoadingRegions } = useQuery<Region[]>({
     queryKey: ["regions"],
     queryFn: async () => {
       const res = await api.get("/address/regions")
       return res.data?.data || []
-    },
+    }
   })
+console.log(regions);
 
-  // Fetching districts based on selected region
-  const {
-    isLoading: isLoadingDistricts,
-    data: districts,
-  } = useQuery<string[]>({
+  // Fetch districts
+  const { data: districts = [], isLoading: isLoadingDistricts } = useQuery<District[]>({
     queryKey: ["districts", selectedRegion],
     queryFn: async () => {
       if (!selectedRegion) return []
       const res = await api.get(`/address/districts?region=${selectedRegion}`)
-      return res.data.data || []
+      return res.data?.data || []
     },
-    enabled: !!selectedRegion,
+    enabled: !!selectedRegion
   })
 
-  // Fetching cemeteries based on selected region and district
-  const { data: cemeteries, isLoading: isLoadingCemeteries } = useQuery<Cemetery[]>({
-    queryKey: ["qabristonlar", selectedRegion, selectedDistrict],
+  // Fetch cemeteries
+  const { data: cemeteries = [], isLoading: isLoadingCemeteries } = useQuery<Cemetery[]>({
+    queryKey: ["cemeteries", selectedRegion, selectedDistrict],
     queryFn: async () => {
       if (!selectedRegion || !selectedDistrict) return []
-      const response = await api.get(`/cemeteries/select?region=${selectedRegion}&district=${selectedDistrict}`)
-      return response.data?.data || []
+      const res = await api.get(`/cemeteries/select?region=${selectedRegion}&district=${selectedDistrict}`)
+      return res.data?.data || []
     },
-    enabled: !!selectedRegion && !!selectedDistrict,
+    enabled: !!selectedRegion && !!selectedDistrict
   })
 
+  
+  
   const handleRegionChange = (value: string) => {
     setSelectedRegion(value)
-    setSelectedDistrict("") // Reset district when region changes
+    setSelectedDistrict("")
+    setSelectedCemetery("")
   }
 
   const handleDistrictChange = (value: string) => {
     setSelectedDistrict(value)
+    setSelectedCemetery("")
   }
 
   const handleCemeteryChange = (value: string) => {
     setSelectedCemetery(value)
   }
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    const searchCriteria: SearchCriteria = {
-      viloyat: viloyatRef.current?.value || "",
-      tuman: tumanRef.current?.value || "",
-      qabrNomi: selectedCemetery,  // Using the selected cemetery state for qabrNomi
-      qabrRaqami: qabrRaqamiRef.current?.value || "",
-    }
-
-    console.log("Searching with criteria:", searchCriteria)
-    // Example: onSearch(searchCriteria);
-  }
-
   const handleReset = () => {
-    if (viloyatRef.current) viloyatRef.current.value = ""
-    if (tumanRef.current) tumanRef.current.value = ""
-    if (qabrRaqamiRef.current) qabrRaqamiRef.current.value = ""
     setSelectedRegion("")
     setSelectedDistrict("")
     setSelectedCemetery("")
+    if (qabrRaqamiRef.current) qabrRaqamiRef.current.value = ""
   }
 
-  // Custom select styles
-  const selectStyles =
-    "w-full border px-3 py-2 rounded-md bg-background transition-colors duration-200 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!selectedRegion || !selectedDistrict || !selectedCemetery) {
+      console.error("Viloyat, tuman va qabriston majburiy")
+      return
+    }
+
+    const searchCriteria: SearchCriteria = {
+      viloyat: selectedRegion,
+      tuman: selectedDistrict,
+      qabrNomi: selectedCemetery,
+    }
+
+    const qabrRaqami = qabrRaqamiRef.current?.value?.trim()
+    if (qabrRaqami) {
+      searchCriteria.qabrRaqami = qabrRaqami
+    }
+
+    try {
+      const endpoint = qabrRaqami 
+        ? "/graves/search"
+        : `/graves/cemetery/${selectedCemetery}`
+      const res = await api.post(endpoint, searchCriteria)
+      console.log("Natijalar:", res.data)
+    } catch (err) {
+      console.error("Qidiruvda xatolik:", err)
+    }
+  }
 
   return (
-    <div className="sm:w-4/5 sm:mx-auto text-gray-100">
-      <div className="grid gap-6 md:gap-8 py-8">
-        <div className="w-full shadow-lg border rounded-lg">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Qidiruv Filtrlari</CardTitle>
-            <CardDescription>Maʼlumotlarni topish uchun quyidagi maydonlarni toʻldiring</CardDescription>
-          </CardHeader>
+    <div className="sm:w-4/5 mx-auto py-8">
+      <div className="border rounded-lg shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl">Qidiruv Filtrlari</CardTitle>
+          <CardDescription>Ma’lumotlarni topish uchun quyidagi filtrlardan foydalaning</CardDescription>
+        </CardHeader>
 
-          <CardContent className="space-y-6">
-            <form onSubmit={handleSearch}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Viloyat select */}
-                <div className="space-y-2">
-                  <label htmlFor="viloyat" className="text-sm font-medium">
-                    Viloyat tanlang
-                  </label>
-                  <Select value={selectedRegion} onValueChange={handleRegionChange}>
-                    <SelectTrigger className="max-w-full">
-                      <SelectValue placeholder="Viloyatni tanlang" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {regions?.map((regionName) => (
-                          <SelectItem key={regionName} value={regionName}>
-                            {regionName}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Tuman select */}
-                <div className="space-y-2">
-                  <label htmlFor="tuman" className="text-sm font-medium">
-                    Tuman tanlang
-                  </label>
-                  <Select
-                    value={selectedDistrict}
-                    onValueChange={handleDistrictChange}
-                    disabled={!selectedRegion || isLoadingDistricts}
-                  >
-                    <SelectTrigger className="max-w-full">
-                      <SelectValue placeholder="Tuman tanlang" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {districts?.map((district) => (
-                          <SelectItem key={district} value={district}>
-                            {district}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Qabriston select */}
-                <div className="space-y-2">
-                  <label htmlFor="qabriston" className="text-sm font-medium">
-                    Qabriston tanlang
-                  </label>
-                  <Select
-                    value={selectedCemetery}
-                    onValueChange={handleCemeteryChange}
-                    disabled={!selectedRegion || !selectedDistrict || isLoadingCemeteries}
-                  >
-                    <SelectTrigger className="max-w-full">
-                      <SelectValue placeholder="Qabriston tanlang" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {cemeteries?.map((cemetery) => (
-                          <SelectItem key={cemetery.name} value={cemetery.name}>
-                            {cemetery.name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  {isLoadingCemeteries && <p className="text-xs text-muted-foreground">Qabristonlar yuklanmoqda...</p>}
-                  {!isLoadingCemeteries && selectedRegion && selectedDistrict && cemeteries?.length === 0 && (
-                    <p className="text-xs text-red-500 mt-1">Tanlangan viloyat va tumanda qabristonlar topilmadi</p>
-                  )}
-                </div>
-
-                {/* Qabr raqami input */}
-                <div className="space-y-2">
-                  <label htmlFor="qabrRaqami" className="text-sm font-medium">
-                    Qabr raqami
-                  </label>
-                  <input
-                    id="qabrRaqami"
-                    name="qabrRaqami"
-                    ref={qabrRaqamiRef}
-                    placeholder="Qabr raqami"
-                    className={selectStyles}
-                  />
-                </div>
+        <CardContent>
+          <form onSubmit={handleSearch}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Viloyat */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Viloyat *</label>
+                <Select value={selectedRegion} onValueChange={handleRegionChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Viloyat tanlang" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {regions.map((region: Region, index:number) => (
+                        <SelectItem key={index} value={region as any}>
+                          {region as any}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-6">
-                <Button type="submit" className="bg-green-500 hover:bg-green-600 text-white">
-                  <Search className="mr-2 h-4 w-4" />
-                  Qidirish
-                </Button>
-                <Button type="button" onClick={handleReset} variant="destructive">
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Filtrlarni tozalash
-                </Button>
+              {/* Tuman */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Tuman *</label>
+                <Select value={selectedDistrict} onValueChange={handleDistrictChange} disabled={!selectedRegion}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tuman tanlang" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {districts.map((district: District, index: number) => (
+                        <SelectItem key={index}  value={district as any} >
+                          {district as any}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
-            </form>
-          </CardContent>
-        </div>
+
+              {/* Qabriston */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Qabriston *</label>
+                <Select
+                  value={selectedCemetery}
+                  onValueChange={handleCemeteryChange}
+                  disabled={!selectedRegion || !selectedDistrict}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Qabriston tanlang" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {cemeteries.map((cemetery: Cemetery ,index:number) => (
+                        <SelectItem key={index} value={cemetery as any}>
+                          {cemetery as any}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                {isLoadingCemeteries && (
+                  <p className="text-xs text-muted-foreground">Qabristonlar yuklanmoqda...</p>
+                )}
+                {!isLoadingCemeteries && selectedRegion && selectedDistrict && cemeteries.length === 0 && (
+                  <p className="text-xs text-red-500">Tanlangan hududda qabristonlar topilmadi</p>
+                )}
+              </div>
+
+              {/* Qabr raqami */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Qabr raqami (ixtiyoriy)</label>
+                <Input
+                  placeholder="Qabr raqami"
+                  ref={qabrRaqamiRef}
+                />
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-6">
+              <Button
+                type="submit"
+                className="bg-green-600 hover:bg-green-700 text-white "
+                disabled={!selectedRegion || !selectedDistrict || !selectedCemetery}
+              >
+                <Search className="mr-2 h-4 w-4" />
+                Qidirish
+              </Button>
+              <Button type="button" onClick={handleReset} variant="destructive">
+                <XCircle className="mr-2 h-4 w-4" />
+                Tozalash
+              </Button>
+            </div>
+          </form>
+        </CardContent>
       </div>
     </div>
   )

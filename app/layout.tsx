@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/sonner';
 import QueryProvider from '@/components/query-provider';
 import { EmailProvider } from '@/lib/contex/EmailContex';
 
+
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
@@ -20,8 +21,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="uz" suppressHydrationWarning>
-      <body className={inter.className}>
+    <html lang="uz" suppressHydrationWarning={true} >
+      <body                          cz-shortcut-listen="true"
+ className={inter.className}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -30,6 +32,7 @@ export default function RootLayout({
         ><EmailProvider>
            <QueryProvider>
             <Header />
+            
             {children}
             <Toaster />
           </QueryProvider>

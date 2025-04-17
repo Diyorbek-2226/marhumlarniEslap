@@ -55,7 +55,7 @@ export default function LoginPage() {
        const savedToken = localStorage.getItem("token")
         
 
-        router.push("/search")
+        router.push("/")
         toast.success("Muvaffaqiyatli kirdingiz")
       } catch (storageError) {
         console.error("Error saving to localStorage:", storageError)

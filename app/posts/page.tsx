@@ -8,12 +8,14 @@ import { Heart, MessageCircle, Share2, Send, Music2, X, ChevronUp, ChevronDown }
 import { useInView } from "react-intersection-observer"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { useInfiniteQuery } from "@tanstack/react-query"
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query"
 import api from "@/lib/axios"
 import { cn } from "@/lib/utils"
-import like from '../../static/images/like.jpg'
-import bezlike from '../../static/images/bezlike.jpg'
+import like from '../../static/images/like.png'
+import bezlike from '../../static/images/bezlike.png'
 import Image from "next/image"
+import { io } from "socket.io-client"
+import { useRouter } from "next/navigation"
 interface Comment {
   id: number
   text: string
@@ -52,12 +54,16 @@ interface Post {
   accessType?: string
 }
 
+
+
 function PostCard({ post, isActive }: { post: Post; isActive: boolean }) {
   const [liked, setLiked] = useState(post.isLiked)
   const [likeCount, setLikeCount] = useState(post.likeCount)
   const [isCommentsOpen, setIsCommentsOpen] = useState(false)
   const [newComment, setNewComment] = useState("")
   const [likes, Setlikes]=useState(false)
+  const socet=useRef<ReturnType<typeof io>>(null)
+  const navigate=useRouter()
   const [comments, setComments] = useState<Comment[]>([
     {
       id: 1,
@@ -134,6 +140,15 @@ function PostCard({ post, isActive }: { post: Post; isActive: boolean }) {
       .join("")
       .toUpperCase()
   }
+  
+  
+  useEffect(() => {
+    // socet.current = io('ws://api.yodimdasiz.uz/ws')
+  
+    return () => {
+      // socet.current?.disconnect() // komponent unmount bo‘lsa soketni tozalash
+    }
+  }, [])
 
   return (
    <div className=" md:flex md:justify-center ">
@@ -166,15 +181,15 @@ function PostCard({ post, isActive }: { post: Post; isActive: boolean }) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-12 w-12 rounded-full  backdrop-blur-sm "
-              onClick={handleLike}
+              className="h-12 w-12 rounded-full hover:bg-gray-500   backdrop-blur-sm "
+              
             >
-              <Image 
+              <Image  onClick={handleLike}
   src={likes? like:bezlike} 
   alt="Like icon" 
   className="w-[80%] rounded-[50%]"
 />
-              {/* <Heart className={`h-7 w-7 ${liked ? "fill-red-500 text-red-500" : "text-white"}`} /> */}
+            
             </Button>
             <span className="text-white text-xs mt-1">{likeCount}</span>
           </div>
@@ -303,6 +318,8 @@ export default function PostsPage() {
 
       const res = await api.get(`/posts/all?page=${pageParam}&size=20`)
       return res.data?.data
+      console.log(res.data);
+      
     },
     getNextPageParam: (lastPage) => {
       if (lastPage?.last) return undefined

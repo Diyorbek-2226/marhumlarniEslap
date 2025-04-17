@@ -19,6 +19,7 @@ import { useQuery } from "@tanstack/react-query"
 import api from "@/lib/axios"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
+
 interface ProfileData {
   email: string
   fullName: string
@@ -40,23 +41,6 @@ export default function Header() {
     setSavedToken(localStorage.getItem("token"))
   }, [])
 
-  if (isAuth) return null
-
-  const menuItems = [
-    { href: "/", label: "Asosiy" },
-    { href: "/addpost", label: "Post qo'shish", authRequired: !savedToken },
-    { href: "/mypost", label: "Postlarim", authRequired: !savedToken },
-    { href: "/posts", label: "Postlar" },
-    { href: "/", label: "Qidirish" },
-    { href: "/my-posts", label: "Mening postlarim", authRequired: true },
-  ]
-
-  const handleLogout = () => {
-    localStorage.clear()
-    router.push("/search")
-    window.location.reload()
-  }
-
   const {
     isLoading,
     isError,
@@ -69,9 +53,23 @@ export default function Header() {
     },
     enabled: !!savedToken,
   })
-console.log(profile);
 
-  // Get initials from fullName for avatar fallback
+  if (isAuth) return null
+
+  const menuItems = [
+    { href: "/addpost", label: "Post qo'shish", authRequired: !savedToken },
+    { href: "/myposts", label: "Postlarim", authRequired: !savedToken },
+    { href: "/posts", label: "Postlar" },
+    { href: "/", label: "Qidirish" },
+    { href: "/my-posts", label: "Mening postlarim", authRequired: true },
+  ]
+
+  const handleLogout = () => {
+    localStorage.clear()
+    router.push("/search")
+    window.location.reload()
+  }
+
   const getInitials = (name: string) => {
     if (!name) return "U"
     return name
@@ -81,10 +79,11 @@ console.log(profile);
       .toUpperCase()
   }
 
-  return (
+  return (<>
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container w-4/5 mx-auto flex h-16 items-center justify-between">
         <div className="flex items-center gap-4">
+          
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden">
@@ -131,11 +130,7 @@ console.log(profile);
 
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsSearchOpen(!isSearchOpen)}>
-              {/* {isSearchOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Search className="h-5 w-5" />
-              )} */}
+              {/* Search icon joyi bo‘sh */}
             </Button>
             <ModeToggle />
 
@@ -180,14 +175,17 @@ console.log(profile);
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
+            ) : ( 
               <Link href="/auth/login">
                 <Button className="bg-green-600 hover:bg-green-700">Kirish</Button>
               </Link>
             )}
           </div>
+          
         </div>
       </div>
+      
     </header>
+    </>
   )
 }

@@ -1,4 +1,5 @@
-import { SearchFilters } from "@/components/SearchFilter"
+
+import SearchFilters from "@/components/SearchFilter"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 
