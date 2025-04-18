@@ -29,10 +29,16 @@ export default function LoginPage() {
       password: password,
     },
   })
+  const hanleReold=()=>{
+    setTimeout(() => {
+      window.location.reload()
+    }, 500);
+  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       const response = await api.post("/auth/sign-in", values)
+      
 
       // Log the response to see its structure
       console.log("API Response:", response)
@@ -56,6 +62,7 @@ export default function LoginPage() {
         
 
         router.push("/")
+       
         toast.success("Muvaffaqiyatli kirdingiz")
       } catch (storageError) {
         console.error("Error saving to localStorage:", storageError)
@@ -91,7 +98,7 @@ export default function LoginPage() {
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
         <div className="absolute inset-0 bg-zinc-900" />
         <div className="relative z-20 flex items-center text-lg font-medium">
-          <Link href="/" className="flex items-center space-x-2">
+          <Link  href="/" className="flex items-center space-x-2">
             Yodimdasiz
           </Link>
         </div>
@@ -179,7 +186,7 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
+              <Button onClick={hanleReold} type="submit" className="w-full">
                 Kirish
               </Button>
             </form>

@@ -141,6 +141,7 @@ navigate.push('/posts')
           </div>
 
           <div className="space-y-2">
+          <label htmlFor="image" className="block text-sm font-medium mb-2">Kimlarga ko'rinsin</label>
             <select
               id="accessType"
               name="accessType"

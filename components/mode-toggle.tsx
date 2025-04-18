@@ -1,6 +1,6 @@
 "use client"
 
-import * as React from "react"
+import { useEffect, useState } from "react"
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -13,7 +13,21 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export function ModeToggle() {
+  const [mounted, setMounted] = useState(false)
   const { setTheme } = useTheme()
+
+  // Komponent mount bo'lgandan keyingina UI ni ko'rsatish
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <Button variant="ghost" size="icon" disabled>
+        <Sun className="h-[1.2rem] w-[1.2rem]" />
+      </Button>
+    )
+  }
 
   return (
     <DropdownMenu>

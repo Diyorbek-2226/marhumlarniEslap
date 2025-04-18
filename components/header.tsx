@@ -30,7 +30,7 @@ interface ProfileData {
 export default function Header() {
   const pathname = usePathname()
   const isAuth = pathname.startsWith("/auth")
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  // const [isSearchOpen, setIsSearchOpen] = useState(false)
   const { isAuthenticated, setToken } = useAuth()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
@@ -39,7 +39,19 @@ export default function Header() {
   useEffect(() => {
     setMounted(true)
     setSavedToken(localStorage.getItem("token"))
+    
   }, [])
+  useEffect(() => {
+    setMounted(true)
+ 
+  
+    const hasRefreshed = sessionStorage.getItem("hasRefreshed")
+    if (!hasRefreshed) {
+      sessionStorage.setItem("hasRefreshed", "true")
+      window.location.reload()
+    }
+  }, [])
+
 
   const {
     isLoading,
@@ -49,6 +61,7 @@ export default function Header() {
     queryKey: ["profile"],
     queryFn: async () => {
       const res = await api.get(`/users/me`)
+      
       return res.data.data
     },
     enabled: !!savedToken,
@@ -60,13 +73,14 @@ export default function Header() {
     { href: "/addpost", label: "Post qo'shish", authRequired: !savedToken },
     { href: "/myposts", label: "Postlarim", authRequired: !savedToken },
     { href: "/posts", label: "Postlar" },
-    { href: "/", label: "Qidirish" },
-    { href: "/my-posts", label: "Mening postlarim", authRequired: true },
+    { href: "/", label: "Qidirish" }
+    // { href: "/myposts", label: "Mening postlarim", authRequired: !savedToken },
   ]
 
   const handleLogout = () => {
     localStorage.clear()
-    router.push("/search")
+    
+    router.push("/")
     window.location.reload()
   }
 
@@ -129,9 +143,7 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsSearchOpen(!isSearchOpen)}>
-              {/* Search icon joyi bo‘sh */}
-            </Button>
+          
             <ModeToggle />
 
             {savedToken ? (
@@ -163,9 +175,9 @@ export default function Header() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/my-posts" className="flex items-center">
+                    <Link href="myposts" className="flex items-center">
                       <Upload className="mr-2 h-4 w-4" />
-                      Mening postlarim
+                      Postlarim
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

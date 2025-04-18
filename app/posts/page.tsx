@@ -14,8 +14,9 @@ import { cn } from "@/lib/utils"
 import like from '../../static/images/like.png'
 import bezlike from '../../static/images/bezlike.png'
 import Image from "next/image"
-import { io } from "socket.io-client"
-import { useRouter } from "next/navigation"
+
+import { useSearchParams } from "next/navigation"
+import PostCard from "@/components/post-card"
 interface Comment {
   id: number
   text: string
@@ -56,14 +57,14 @@ interface Post {
 
 
 
-function PostCard({ post, isActive }: { post: Post; isActive: boolean }) {
+function PostCards({ post, isActive }: { post: Post; isActive: boolean }) {
   const [liked, setLiked] = useState(post.isLiked)
   const [likeCount, setLikeCount] = useState(post.likeCount)
   const [isCommentsOpen, setIsCommentsOpen] = useState(false)
   const [newComment, setNewComment] = useState("")
   const [likes, Setlikes]=useState(false)
-  const socet=useRef<ReturnType<typeof io>>(null)
-  const navigate=useRouter()
+  // const socet=useRef<ReturnType<typeof io>>(null)
+  // const navigate=useRouter()
   const [comments, setComments] = useState<Comment[]>([
     {
       id: 1,
@@ -142,13 +143,15 @@ function PostCard({ post, isActive }: { post: Post; isActive: boolean }) {
   }
   
   
-  useEffect(() => {
-    // socet.current = io('ws://api.yodimdasiz.uz/ws')
+  // useEffect(() => {
+  //   // socet.current = io('ws://api.yodimdasiz.uz/ws')
   
-    return () => {
-      // socet.current?.disconnect() // komponent unmount bo‘lsa soketni tozalash
-    }
-  }, [])
+  //   return () => {
+  //     // socet.current?.disconnect() // komponent unmount bo‘lsa soketni tozalash
+  //   }
+  // }, [])
+
+  
 
   return (
    <div className=" md:flex md:justify-center ">
@@ -429,9 +432,14 @@ export default function PostsPage() {
     )
   }
 
+  // const searchParams = useSearchParams();
+  
+  // const viloyat = searchParams.get('viloyat')
+  // console.log("viloyat", viloyat);
+
   return (
     <div className="relative h-[100dvh] ">
-      {/* Main scrollable container */}
+
       <div 
         ref={containerRef}
         className="snap-y snap-mandatory h-full overflow-y-auto scrollbar-hide"
@@ -442,7 +450,8 @@ export default function PostsPage() {
             ref={el => postRefs.current[index] = el}
             className="snap-start h-[100vh] w-full"
           >
-            <PostCard post={post} isActive={index === activeIndex} />
+            {/* <PostCard post={post} isActive={index === activeIndex} /> */}
+            <PostCard post={post}/>
           </div>
         ))}
         

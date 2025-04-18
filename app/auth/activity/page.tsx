@@ -84,7 +84,7 @@ const ActivityCode = () => {
         setVerified(true);
         toast.success("Email muvaffaqiyatli tasdiqlandi!");
         setTimeout(() => {
-          router.push("/search");
+          router.push("/");
         }, 1000);
       } else {
         toast.error("Noto‘g‘ri kod. Qayta urinib ko‘ring.");
