@@ -55,6 +55,18 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
+/**
+* Schedules a toast removal operation after a specific delay if not already scheduled.
+* @example
+* toastHandler('uniqueToastId')
+* // Schedules the removal of the toast with the ID 'uniqueToastId' after TOAST_REMOVE_DELAY.
+* @param {string} toastId - Unique identifier for the toast that needs to be removed.
+* @returns {void} The function does not return a value.
+* @description
+*   - Ensures a toast is removed only once by checking and storing scheduled timeouts.
+*   - Utilizes a constant delay value, TOAST_REMOVE_DELAY, to time the toast removal operation.
+*   - Integrates with a dispatch function for state management of toast notifications.
+*/
 const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
     return;
@@ -71,6 +83,20 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout);
 };
 
+/**
+ * Manages state transitions for toast notifications based on different action types.
+ * @example
+ * handleToastAction(state, { type: 'ADD_TOAST', toast: { id: '1', message: 'Hello' } })
+ * // Returns updated state with the new toast added to the list.
+ * @param {State} state - The current state of the toast notifications.
+ * @param {Action} action - An action object specifying how to update the state.
+ * @returns {State} Updated state after applying the specified action.
+ * @description
+ *   - Supports action types: 'ADD_TOAST', 'UPDATE_TOAST', 'DISMISS_TOAST', 'REMOVE_TOAST'.
+ *   - Limits the number of active toasts based on the defined TOAST_LIMIT.
+ *   - Handles dismissal of toasts by adding them to a removal queue.
+ *   - Removes toasts either by specific ID or clears all when no ID is specified.
+ */
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'ADD_TOAST':
@@ -139,6 +165,18 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, 'id'>;
 
+/**
+ * Creates and manages a toaster notification with an auto-generated ID.
+ * @example
+ * toast({ message: 'Sample toast' })
+ * // Returns: { id: 'uniqueId', dismiss: [Function], update: [Function] }
+ * @param {Object} props - The properties of the toast including message and settings.
+ * @returns {Object} An object containing the ID, and functions to dismiss or update the toast.
+ * @description
+ *   - Dispatches an action to add a toast to the toaster component.
+ *   - Auto-closes the toast when its `open` state changes to false.
+ *   - Provides functions to update or dismiss the toast using the auto-generated ID.
+ */
 function toast({ ...props }: Toast) {
   const id = genId();
 
@@ -168,6 +206,18 @@ function toast({ ...props }: Toast) {
   };
 }
 
+/**
+* Provides a stateful API for managing toast notifications in a React application.
+* @example
+* const { toast, dismiss } = useToast();
+* toast('Success!');
+* dismiss(toastId);
+* @returns {object} An object containing the toast state, a toast function to show notifications, and a dismiss function to hide notifications.
+* @description
+*   - Listeners are managed in a global array to update the component state.
+*   - State updates trigger a re-render of the component using this hook.
+*   - The clean-up function ensures that the setState listener is removed when the component unmounts.
+*/
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState);
 

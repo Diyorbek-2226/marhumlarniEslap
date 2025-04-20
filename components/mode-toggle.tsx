@@ -12,6 +12,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+/**
+ * Toggles between light and dark themes using a dropdown menu interface.
+ * @example
+ * ModeToggle()
+ * Renders a button that toggles theme with a dropdown menu.
+ * @returns {JSX.Element} Returns a JSX element representing the mode toggle component.
+ * @description
+ *   - Utilizes useTheme hook to manage theme state.
+ *   - Applies CSS classes for smooth transition effects between icons.
+ */
 export function ModeToggle() {
   const { setTheme } = useTheme()
 
