@@ -18,6 +18,17 @@ const formSchema = z.object({
   password: z.string().min(6, "Parol kamida 6 ta belgidan iborat bo'lishi kerak"),
 })
 
+/**
+ * Renders the login page with form handling and authentication functionality.
+ * @example
+ * LoginPage()
+ * <div>...</div>
+ * @returns {JSX.Element} The JSX representation of the login page.
+ * @description
+ *   - Utilizes `useForm` with Zod schema for form validation.
+ *   - Provides Google Sign-In option via `handleGoogleSignIn`.
+ *   - Incorporates localStorage availability check to ensure compatibility.
+ */
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -30,6 +41,18 @@ export default function LoginPage() {
     },
   })
 
+  /**
+   * Handles form submission for user authentication.
+   * @example
+   * onSubmit(formValues)
+   * Redirects the user to the homepage on successful login.
+   * @param {z.infer<typeof formSchema>} values - The form values conforming to the validated schema used for the login request.
+   * @returns {Promise<void>} No return value. Handles side effects like localStorage updates and page navigation.
+   * @description
+   *   - Attempts to retrieve and store the authentication token from an API response.
+   *   - Handles error cases where the token is missing or localStorage operations fail, providing user feedback.
+   *   - Navigates the user to the homepage upon successful authentication.
+   */
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       const response = await api.post("/auth/sign-in", values)
